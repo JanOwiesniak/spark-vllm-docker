@@ -11,7 +11,7 @@ ENV VLLM_BASE_DIR=/workspace/vllm
 
 # 1. Install System Dependencies
 # Added 'git', 'wget', and 'python3-pip' as they are required for the script steps
-RUN apt-get update && apt-get install -y \
+RUN apt update && apt upgrade -y && apt install -y --allow-change-held-packages \
     curl \
     vim \
     cmake \
@@ -22,6 +22,11 @@ RUN apt-get update && apt-get install -y \
     git \
     wget \
     gnuplot \
+    libnccl-dev \
+    libnccl2 \
+    libibverbs1 \
+    libibverbs-dev \
+    rdma-core \
     && rm -rf /var/lib/apt/lists/*
 
 # Setup Workspace
@@ -75,12 +80,8 @@ RUN python3 use_existing_torch.py && \
     sed -i "/flashinfer/d" requirements/cuda.txt && \
     pip install -r requirements/build.txt
 
-# TEMPORARY - apply NVFP4 patch - MERGED ON 11/25/2025 - TODO: test and remove from Dockerfile
-# RUN curl -L https://patch-diff.githubusercontent.com/raw/vllm-project/vllm/pull/29242.diff | git apply
-
 # Final Build
 # Uses --no-build-isolation to respect the pre-installed Torch/FlashInfer
-# Changed -e (editable) to . (standard install) for better Docker portability
 RUN pip install --no-build-isolation . -v
 
 # Set the final workdir
