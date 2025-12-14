@@ -3,7 +3,7 @@
 # =========================================================
 # STAGE 1: Builder (Builds vLLM from Source)
 # =========================================================
-FROM nvidia/cuda:13.0.2-devel-ubuntu24.04 AS builder
+FROM nvidia/cuda:13.0.2-devel-ubuntu24.04 AS base
 
 # Set non-interactive frontend to prevent apt prompts
 ENV DEBIAN_FRONTEND=noninteractive
@@ -37,6 +37,9 @@ WORKDIR $VLLM_BASE_DIR
 # 2. Set Environment Variables
 ENV TORCH_CUDA_ARCH_LIST=12.1a
 ENV TRITON_PTXAS_PATH=/usr/local/cuda/bin/ptxas
+
+# Initial Triton repo clone (cached forever) - before all cache busters
+RUN git clone https://github.com/triton-lang/triton.git
 
 # --- CACHE BUSTER ---
 # Change this argument to force a re-download of PyTorch/FlashInfer
@@ -112,16 +115,13 @@ RUN --mount=type=cache,id=ccache,target=/root/.ccache \
 
 # Install latest Triton from main - override version pulled from dependencies
 
-# Initial clone (Cached forever)
-RUN git clone https://github.com/triton-lang/triton.git
-
 # We expect TRITON_SHA to be passed from the command line to break the cache
 # Set to v3.5.1 commit by default
 ARG TRITON_SHA=0add68262ab0a2e33b84524346cb27cbb2787356
 
 # This only runs if TRITON_SHA differs from the last build
-RUN --mount=type=cache,target=/root/.cache/pip \
-    --mount=type=cache,target=/root/.cache/ccache \
+RUN --mount=type=cache,id=ccache,target=/root/.ccache \
+    --mount=type=cache,id=pip-cache,target=/root/.cache/pip \
     cd triton && \
     git fetch origin && \
     git checkout ${TRITON_SHA} && \
