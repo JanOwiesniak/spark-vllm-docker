@@ -30,6 +30,7 @@ The Dockerfile builds from the main branch of VLLM, so depending on when you run
 Added `launch-cluster.sh` convenience script for basic cluster management - see details below.
 
 Added `-j` / `--build-jobs` argument to `build-and-copy.sh` to control build parallelism.
+Added `--nccl-debug` option to specify NCCL debug level. Default is none to decrease verbosity.
 
 ### 2025-12-15
 
